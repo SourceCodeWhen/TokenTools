@@ -1,23 +1,29 @@
-use actix_web::{web, App, HttpResponse, HttpServer};
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 
-fn main() {
-    let server = HttpServer::new(|| App::new().route("/", web::get().to(get_index)));
-
-    println!("Serving on http://localhost:3000...");
-    server
-        .bind("127.0.0.1:3000")
-        .expect("error binding to server address")
-        .run()
-        .expect("error running server");
+#[get("/")]
+async fn hello() -> impl Responder {
+    HttpResponse::Ok().body("Hello world!")
 }
 
-fn get_index() -> HttpResponse {
-    HttpResponse::Ok().content_type("text/html").body(
-        r#"
-                <title>Token Tools</title>
-                <form action="/token" method="post">
-                <button type="submit">Login</button>
-                </form>
-            "#,
-    )
+#[post("/echo")]
+async fn echo(req_body: String) -> impl Responder {
+    HttpResponse::Ok().body(req_body)
 }
+
+async fn manual_hello() -> impl Responder {
+    HttpResponse::Ok().body("Hey there!")
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| {
+        App::new()
+            .service(hello)
+            .service(echo)
+            .route("/hey", web::get().to(manual_hello))
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
+}
+
